@@ -77,10 +77,14 @@ export const ResultView: React.FC<ResultViewProps> = ({ data, onRemix }) => {
   };
 
   const handleShareX = () => {
+    const shareUrl = data.builderId 
+      ? `${window.location.origin}/builder/${data.builderId}`
+      : window.location.origin;
+
     const text = encodeURIComponent(
       `Just created my HH Goa 2026 Builder Identity 🚀\nRole: ${data.title || data.role}\n\n#FrameInGoa #HHGoa2026`,
     );
-    const url = encodeURIComponent(window.location.href);
+    const url = encodeURIComponent(shareUrl);
     window.open(
       `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
       '_blank',
@@ -89,8 +93,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ data, onRemix }) => {
   };
 
   const handleCopyLink = async () => {
+    const shareUrl = data.builderId 
+      ? `${window.location.origin}/builder/${data.builderId}`
+      : window.location.origin;
+
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast('Link copied to clipboard!', 'success');
       setTimeout(() => setCopied(false), 2500);
