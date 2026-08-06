@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/* ─── Font tokens ─────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --font-display: 'Geist', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+/* ─── Body ────────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  background-color: #131313;
+  color: #e5e2e1;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Font utility classes (not in Tailwind core) ─────────────── */
+.font-headline-md {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+.font-body-lg {
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+.font-body-sm {
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+.font-mono {
+  font-family: var(--font-mono) !important;
+}
+
+/* ─── Glassmorphism ───────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Gradient text ───────────────────────────────────────────── */
+.cyber-gradient-text {
+  background: linear-gradient(90deg, #00f0ff, #ff24e4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Primary CTA button ──────────────────────────────────────── */
+.btn-primary-gradient {
+  background: linear-gradient(90deg, #00dbe9, #fface8);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+.btn-primary-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+.btn-primary-gradient:hover::before {
+  opacity: 1;
+}
+
+/* ─── Circuit pattern ─────────────────────────────────────────── */
+.circuit-bg {
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-position: center;
+}
+
+/* ─── 3D card perspective ─────────────────────────────────────── */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* ─── Range slider accent ─────────────────────────────────────── */
+input[type='range'] {
+  accent-color: #00f0ff;
+}
+
+/* ─── Custom scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 6px; height: 6px; }
+::-webkit-scrollbar-track      { background: #0e0e0e; }
+::-webkit-scrollbar-thumb      { background: #2a2a2a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover{ background: #00f0ff; }
+
+/* ─── Toast notification ──────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: all;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+  max-width: 320px;
+}
+.toast-success { background: rgba(0, 240, 255, 0.12); color: #7df4ff; border-color: rgba(0,240,255,0.3); }
+.toast-error   { background: rgba(255, 50, 80, 0.12);  color: #ff8096; border-color: rgba(255,50,80,0.3);  }
+.toast-info    { background: rgba(255,255,255,0.06);   color: #e5e2e1; }
+
+/* ─── Loading skeleton ────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1c1c1c 25%, #2a2a2a 50%, #1c1c1c 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ─── Reduced-motion overrides ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Focus ring (accessibility) ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #00f0ff;
+  outline-offset: 2px;
+}

@@ -1,0 +1,18 @@
+{
+  "name": "FrameInGoa",
+  "short_name": "FrameInGoa",
+  "description": "HH Goa 2026 Builder Identity Generator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#131313",
+  "theme_color": "#131313",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
