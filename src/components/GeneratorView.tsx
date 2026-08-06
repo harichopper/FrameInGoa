@@ -113,10 +113,54 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     }
   }, [user, saveProfile, data, toast]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 3) {
       goToStep((step + 1) as Step);
     } else {
+      if (user && !data.builderId && data.name) {
+        setSavingProfile(true);
+        try {
+          let cardImageBase64 = '';
+          if (cardRef.current) {
+            try {
+              await new Promise((r) => setTimeout(r, 150));
+              cardImageBase64 = await toPng(cardRef.current, {
+                quality: 0.85,
+                pixelRatio: 1.5,
+                cacheBust: true,
+                style: { borderRadius: '0' },
+              });
+            } catch (err) {
+              console.error('Failed to capture card PNG:', err);
+            }
+          }
+
+          const saved = await saveProfile({
+            name: data.name,
+            title: data.title,
+            role: data.role,
+            stack: data.stack,
+            github: data.github,
+            theme_id: data.themeId,
+            badge_number: data.badgeNumber,
+            photo_url: data.photoUrl || undefined,
+            crop: data.crop,
+            zoom: data.zoom,
+            rotation: data.rotation,
+            cropped_area_pixels: data.croppedAreaPixels,
+            card_image_base64: cardImageBase64 || undefined,
+          } as any);
+
+          if (saved) {
+            toast(`Builder ID minted: ${saved.builder_id}`, 'success');
+            onChange({ builderId: saved.builder_id });
+          }
+        } catch (err) {
+          console.error('Failed to auto-save profile on export:', err);
+        } finally {
+          setSavingProfile(false);
+        }
+      }
       onGenerate();
     }
   };
