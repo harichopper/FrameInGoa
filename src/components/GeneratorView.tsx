@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { toPng } from 'html-to-image';
 import { BuilderData } from '../types';
 import { PhotoUploader } from './PhotoUploader';
 import { BuilderForm } from './BuilderForm';
@@ -55,6 +56,8 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
   const { user, saveProfile } = useAuth();
   const { toast } = useToast();
 
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const goToStep = (next: Step) => {
     setDirection(next > step ? 1 : -1);
     setStep(next);
@@ -69,6 +72,22 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     if (!user) return;
     setSavingProfile(true);
     try {
+      let cardImageBase64 = '';
+      if (cardRef.current) {
+        try {
+          // Wait for DOM to settle
+          await new Promise((r) => setTimeout(r, 150));
+          cardImageBase64 = await toPng(cardRef.current, {
+            quality: 0.85,
+            pixelRatio: 1.5, // 1.5x ratio is fast to transmit and ideal size for OG image previews
+            cacheBust: true,
+            style: { borderRadius: '0' },
+          });
+        } catch (err) {
+          console.error('Failed to capture card PNG for database/storage:', err);
+        }
+      }
+
       const saved = await saveProfile({
         name: data.name,
         title: data.title,
@@ -82,7 +101,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
         zoom: data.zoom,
         rotation: data.rotation,
         cropped_area_pixels: data.croppedAreaPixels,
-      });
+        card_image_base64: cardImageBase64 || undefined,
+      } as any);
+
       if (saved) {
         toast(`Builder ID minted: ${saved.builder_id}`, 'success');
         onChange({ builderId: saved.builder_id });
@@ -260,7 +281,7 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
 
             <div className="flex justify-center">
               <div className="w-full max-w-[340px]">
-                <CardCanvas data={data} cardType="card" />
+                <CardCanvas cardRef={cardRef} data={data} cardType="card" />
               </div>
             </div>
           </div>

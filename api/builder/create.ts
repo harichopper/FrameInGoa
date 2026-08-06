@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       crop,
       zoom,
       rotation,
+      card_image_base64,
     } = req.body;
 
     const themeId = req.body.themeId !== undefined ? req.body.themeId : req.body.theme_id;
@@ -63,6 +64,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('user_id', session.userId)
       .maybeSingle();
 
+    const builderId = existingProfile ? existingProfile.builder_id : await getUniqueBuilderId();
+    let cardImageUrl = existingProfile ? existingProfile.card_image_url : null;
+
+    // Upload rendered card PNG image to Supabase Storage for OG tags
+    if (card_image_base64) {
+      try {
+        const base64Data = card_image_base64.replace(/^data:image\/png;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = `${builderId}.png`;
+
+        // Ensure cards storage bucket exists
+        await supabase.storage.createBucket('cards', {
+          public: true,
+          allowedMimeTypes: ['image/png'],
+        }).catch(() => {});
+
+        const { error: uploadError } = await supabase.storage
+          .from('cards')
+          .upload(fileName, buffer, {
+            contentType: 'image/png',
+            upsert: true
+          });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('cards')
+            .getPublicUrl(fileName);
+          cardImageUrl = publicUrl;
+        } else {
+          console.error('Storage upload error:', uploadError);
+        }
+      } catch (err) {
+        console.error('Storage upload exception:', err);
+      }
+    }
+
     let resultProfile;
 
     if (existingProfile) {
@@ -81,6 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           theme_id: themeId || 'cyber',
           badge_number: badgeNumber,
           photo_url: photoUrl,
+          card_image_url: cardImageUrl,
           crop: crop || null,
           zoom: zoom || 1.0,
           rotation: rotation || 0.0,
@@ -97,9 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       resultProfile = updated;
     } else {
-      // Create new: generate unique Builder ID
-      const builderId = await getUniqueBuilderId();
-      
+      // Create new
       const { data: inserted, error: insertError } = await supabase
         .from('builder_profiles')
         .insert({
@@ -116,6 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           theme_id: themeId || 'cyber',
           badge_number: badgeNumber,
           photo_url: photoUrl,
+          card_image_url: cardImageUrl,
           crop: crop || null,
           zoom: zoom || 1.0,
           rotation: rotation || 0.0,

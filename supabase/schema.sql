@@ -35,6 +35,7 @@ create table if not exists builder_profiles (
   theme_id            text not null default 'cyber',
   badge_number        text,
   photo_url           text,
+  card_image_url      text,
   crop                jsonb,                      -- { x, y }
   zoom                double precision default 1.0,
   rotation            double precision default 0.0,

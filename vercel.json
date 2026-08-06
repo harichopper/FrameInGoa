@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/builder/:builderId", "destination": "/" }
+    { "source": "/builder/:builderId", "destination": "/api/builder/get-html?id=$1" }
   ],
   "headers": [
     {

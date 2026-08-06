@@ -27,6 +27,8 @@ export interface BuilderProfile {
   theme_id?: string;
   badge_number?: string;
   photo_url?: string;
+  card_image_url?: string;
+  card_image_base64?: string;
   crop?: { x: number; y: number };
   zoom?: number;
   rotation?: number;
