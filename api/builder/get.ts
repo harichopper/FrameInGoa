@@ -3,8 +3,10 @@ import { supabase } from '../_lib/db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query;
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const builderIdStr = String(rawId || '').trim();
 
-  if (!id) {
+  if (!builderIdStr) {
     return res.status(400).json({ error: 'Builder ID is required' });
   }
 
@@ -32,15 +34,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Find profile by builder_id (or database UUID fallback)
-    const { data: profile, error: profileError } = await supabase
+    // Find profile by builder_id (case-insensitive to tolerate pasted/typed casing)
+    const { data: profileByBuilderId, error: builderIdError } = await supabase
       .from('builder_profiles')
       .select('*')
-      .or(`builder_id.eq.${id},id.eq.${id}`)
+      .ilike('builder_id', builderIdStr)
       .maybeSingle();
 
-    if (profileError || !profile) {
-      return res.status(444).json({ error: 'Builder profile not found' });
+    if (builderIdError) {
+      console.error('Get builder details builder_id lookup error:', builderIdError);
+      return res.status(500).json({ error: 'Failed to lookup builder profile' });
+    }
+
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    let profile = profileByBuilderId;
+
+    // Optional UUID fallback for legacy/direct DB ID URLs
+    if (!profile && uuidLike.test(builderIdStr)) {
+      const { data: profileByUuid, error: uuidError } = await supabase
+        .from('builder_profiles')
+        .select('*')
+        .eq('id', builderIdStr)
+        .maybeSingle();
+
+      if (uuidError) {
+        console.error('Get builder details uuid lookup error:', uuidError);
+        return res.status(500).json({ error: 'Failed to lookup builder profile' });
+      }
+
+      profile = profileByUuid;
+    }
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Builder profile not found' });
     }
 
     // Fetch linked wallets

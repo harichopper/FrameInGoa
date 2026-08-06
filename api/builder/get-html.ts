@@ -3,12 +3,12 @@ import { supabase } from '../_lib/db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query;
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const builderIdStr = String(rawId || '').trim();
 
-  if (!id) {
+  if (!builderIdStr) {
     return res.status(400).send('Builder ID is required');
   }
-
-  const builderIdStr = String(id);
   let name = 'Builder';
   let title = 'HH Goa 2026 Builder';
   let description = 'Claim your identity for Goa\'s premier creative developer gathering. Generate your official HH Goa 2026 digital badge.';
@@ -16,12 +16,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (supabase) {
-      // Find profile by builder_id (or database UUID fallback)
-      const { data: profile } = await supabase
+      // Find profile by builder_id first (case-insensitive), then UUID fallback
+      const { data: profileByBuilderId, error: builderIdError } = await supabase
         .from('builder_profiles')
         .select('*')
-        .or(`builder_id.eq.${builderIdStr},id.eq.${builderIdStr}`)
+        .ilike('builder_id', builderIdStr)
         .maybeSingle();
+
+      if (builderIdError) {
+        throw builderIdError;
+      }
+
+      const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      let profile = profileByBuilderId;
+
+      if (!profile && uuidLike.test(builderIdStr)) {
+        const { data: profileByUuid, error: uuidError } = await supabase
+          .from('builder_profiles')
+          .select('*')
+          .eq('id', builderIdStr)
+          .maybeSingle();
+
+        if (uuidError) {
+          throw uuidError;
+        }
+
+        profile = profileByUuid;
+      }
 
       if (profile) {
         name = profile.name || 'Builder';
