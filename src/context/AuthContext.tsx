@@ -105,13 +105,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const connectMetaMask = async () => {
     const ethereum = (window as any).ethereum;
     if (!ethereum) {
-      toast('MetaMask is not installed. Please install it to connect.', 'error');
+      const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent || '');
+      if (isMobile) {
+        const dappPath = `${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const deepLink = `https://metamask.app.link/dapp/${dappPath}`;
+        toast('Opening MetaMask mobile app…', 'info');
+        window.location.href = deepLink;
+        return;
+      }
+      toast('MetaMask extension not detected. Install MetaMask or open this link inside the MetaMask mobile app.', 'error');
       return;
     }
 
     try {
+      const provider = Array.isArray(ethereum.providers)
+        ? (ethereum.providers.find((p: any) => p?.isMetaMask) || ethereum)
+        : ethereum;
+
       // 1. Request account access
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
       const address = accounts[0];
       if (!address) throw new Error('No accounts returned from MetaMask');
 
@@ -123,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const encoder = new TextEncoder();
       const msgBytes = encoder.encode(message);
       const hexMsg = '0x' + Array.from(msgBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-      const signature = await ethereum.request({
+      const signature = await provider.request({
         method: 'personal_sign',
         params: [hexMsg, address],
       });
@@ -144,6 +156,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast('Wallet connected & verified successfully!', 'success');
     } catch (err: any) {
       console.error('MetaMask connection error:', err);
+      if (err?.code === 4001) {
+        toast('MetaMask signature request was rejected.', 'error');
+        return;
+      }
       toast(err.message || 'MetaMask connection failed', 'error');
     }
   };
